@@ -10,6 +10,13 @@
 #define N_DIM 1
 #define MSG_CODE 1212
 
+typedef struct jooj
+{
+    char name[64];
+}ojjo;
+
+
+
 int main(int argc, char** argv) {
 
     MPI_Comm newComm; // Novo Comunicador
@@ -30,6 +37,8 @@ int main(int argc, char** argv) {
     char test2[64];
     double test_00[5] = {1.0, 2.0, 3.0, 4.0, 5.0};
     double test2_2[5];
+    ojjo test3;
+    strcpy(test3.name, "Hello Wolrd");
 
     MPI_Init (&argc, &argv);
 
