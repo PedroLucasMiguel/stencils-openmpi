@@ -7,7 +7,6 @@
 #define MAX_PROCESS 16
 #define N_DIM 1
 
-#define IGNORE_STATUS &(MPI_Status){}
 #define NON_PERIODIC &(int){0}
 #define REARRANGE (int){1}
 
@@ -31,9 +30,10 @@ int main(int argc, char** argv)
 	// Cria um novo cartesiano (newComm) com dimensão "N_DIM x dims" (1 x N)
 	MPI_Cart_create(MPI_COMM_WORLD, N_DIM, &numProcesses, NON_PERIODIC, REARRANGE, &newComm);
 
-	// Armazena o rank do processo em "processRank"
 	int processRank;
 	MPI_Comm_rank(newComm, &processRank);
+
+	printf("Hello from process %d/%d\n", processRank, numProcesses);
 
 	// Recebe a localização desse processo dentro do Comunicador e armazena em "coords"
 	int coords; // Coordenada do processo dentro do Comunicador
@@ -54,7 +54,7 @@ int main(int argc, char** argv)
 		printImageData(&d);
 
 		MPI_Send(test_0, 64, MPI_CHAR, downProcess, 69420, newComm);
-		MPI_Recv(test2, 64, MPI_CHAR, downProcess, 69420, newComm, IGNORE_STATUS);
+		MPI_Recv(test2, 64, MPI_CHAR, downProcess, 69420, newComm, MPI_STATUS_IGNORE);
 		MPI_Send(test_00, 5, MPI_DOUBLE, downProcess, 42069, newComm);
 
 		MPI_Send(&(FixedPoint){ 6, 9, 4, 2, 0 }, 1, mpi_FixedPoint, downProcess, 1212, newComm);
@@ -64,11 +64,11 @@ int main(int argc, char** argv)
 	else if (processRank == 1)
 	{
 		MPI_Send(test_1, 64, MPI_CHAR, upProcess, 69420, newComm);
-		MPI_Recv(test2, 64, MPI_CHAR, upProcess, 69420, newComm, IGNORE_STATUS);
+		MPI_Recv(test2, 64, MPI_CHAR, upProcess, 69420, newComm, MPI_STATUS_IGNORE);
 
 		printf("Process 1 received: %s\n", test2);
 
-		MPI_Recv(test2_2, 5, MPI_DOUBLE, upProcess, 42069, newComm, IGNORE_STATUS);
+		MPI_Recv(test2_2, 5, MPI_DOUBLE, upProcess, 42069, newComm, MPI_STATUS_IGNORE);
 
 		for (int i = 0; i < 5; i++)
 		{
@@ -77,7 +77,7 @@ int main(int argc, char** argv)
 		printf("\n");
 
 		FixedPoint r;
-		MPI_Recv(&r, 1, mpi_FixedPoint, upProcess, 1212, newComm, IGNORE_STATUS);
+		MPI_Recv(&r, 1, mpi_FixedPoint, upProcess, 1212, newComm, MPI_STATUS_IGNORE);
 
 		printFixedPoint(&r);
 	}
