@@ -1,13 +1,6 @@
 #ifndef FILE_READER_H
 #define FILE_READER_H
 #include <mpi.h>
-typedef struct FixedPointsData {
-    int x;
-    int y;
-    int r;
-    int g;
-    int b;
-}FixedPoint;
 
 typedef struct
 {

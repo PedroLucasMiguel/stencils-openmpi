@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     char test2[64];
     double test_00[5] = {1.0, 2.0, 3.0, 4.0, 5.0};
     double test2_2[5];
-    FileData a;
+
     FixedPoint s;
     s.x = 6;
     s.y = 9;
