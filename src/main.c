@@ -30,7 +30,7 @@ void Init_matrix(double*** matrix, int rows, int columns) {
 
 int main(int argc, char** argv) {
 
-    MPI_Comm newComm; // Recebera o novo "universo"
+    MPI_Comm newComm; // Novo Cartesiano
     
     // Matrizes
     double*** matrixToProcess;
