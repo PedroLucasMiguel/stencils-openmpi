@@ -3,19 +3,13 @@
 #include <mpi.h>
 
 #include <string.h>
+#include "../include/FileReader.h"
 
 #define ITERATION_COUNT 1000
 #define MANAGER_RANK 0 // Rank do processo responsável pela leitura do arquivo e junção de matrizes
 #define MAX_PROCESS 16
 #define N_DIM 1
 #define MSG_CODE 1212
-
-typedef struct jooj
-{
-    char name[64];
-}ojjo;
-
-
 
 int main(int argc, char** argv) {
 
@@ -37,8 +31,10 @@ int main(int argc, char** argv) {
     char test2[64];
     double test_00[5] = {1.0, 2.0, 3.0, 4.0, 5.0};
     double test2_2[5];
-    ojjo test3;
-    strcpy(test3.name, "Hello Wolrd");
+
+    FileData a;
+    readFile("img01.dat", &a);
+    printFileData(&a);
 
     MPI_Init (&argc, &argv);
 
@@ -86,4 +82,6 @@ int main(int argc, char** argv) {
     
 
     MPI_Finalize();
+
+    return 0;
 }
