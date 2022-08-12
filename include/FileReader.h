@@ -1,10 +1,18 @@
 #ifndef FILE_READER_H
 #define FILE_READER_H
 
+typedef struct FixedPointsData {
+    int x;
+    int y;
+    int r;
+    int g;
+    int b;
+}FixedPoint;
+
 typedef struct FileReaderData {
     int imageSize;
     int qtdFixedPoints;
-    int (*fixedPoints)[5];
+    FixedPoint* fixedPoints;
 }FileData;
 
 void readFile(char* path, FileData* data);
