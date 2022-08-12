@@ -9,14 +9,21 @@ typedef struct FixedPointsData {
     int b;
 }FixedPoint;
 
-typedef struct FileReaderData {
-    int imageSize;
-    int qtdFixedPoints;
-    FixedPoint* fixedPoints;
-}FileData;
+typedef struct
+{
+	int x, y;
+	int r, g, b;
+} FixedPoint;
 
+typedef struct
+{
+	const int size;
+	const int fixedPointCount;
+	const FixedPoint* fixedPoints;
+} ImageData;
+
+ImageData readImageFile(const char* path);
+void printImageData(const ImageData* data);
 MPI_Datatype addFixedPointToMpi();
-void readFile(char* path, FileData* data);
-void printFileData(FileData* data);
 
 #endif
