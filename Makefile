@@ -6,17 +6,18 @@ INCLUDE = -I.include/
 CC := mpicc
 CFLAGS := -Wall -Wextra -Werror -std=c99 -pedantic
 
-OBJS := $(SRCS:.c=.o)
+EXEC := mpirun
+EXECFLAGS := -np 4
 
 default: all
 
-all: $(PROG)
+all: $(PROG) clean run
 
-$(PROG): $(OBJS)
-	$(CC) -o $@ $^ $(INCLUDE)
-
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@ $(INCLUDE)
+$(PROG): $(SRCS)
+	$(CC) -o $@ $(SRCS) $(INCLUDE)
 
 clean:
 	rm -f $(OBJS)
+
+run:
+	$(EXEC) $(EXECFLAGS) $(PROG)
