@@ -4,8 +4,11 @@
 
 typedef struct
 {
-	int x, y;
-	int r, g, b;
+	int x;
+	int y;
+	int r;
+	int g;
+	int b;
 } FixedPoint;
 
 typedef struct
@@ -18,5 +21,6 @@ typedef struct
 ImageData readImageFile(const char* path);
 void printImageData(const ImageData* data);
 MPI_Datatype addFixedPointToMpi();
+void printFixedPoint(const FixedPoint* fp);
 
 #endif

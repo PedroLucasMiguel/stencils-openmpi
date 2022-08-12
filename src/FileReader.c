@@ -3,21 +3,26 @@
 
 #include "../include/FileReader.h"
 
-MPI_Datatype addFixedPointToMpi() {
-	/* create a type for struct car */
-	const int nitems = 5;
-	int blocklengths[5] = {1,1,1,1,1};
-	MPI_Datatype types[5] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT};
+MPI_Datatype addFixedPointToMpi()
+{
+// TODO: Use XMacros to avoid errors
+	MPI_Aint offsets[] = {
+		offsetof(FixedPoint, x),
+		offsetof(FixedPoint, y),
+		offsetof(FixedPoint, r),
+		offsetof(FixedPoint, g),
+		offsetof(FixedPoint, b),
+	};
+
 	MPI_Datatype mpi_FixedPoint;
-	MPI_Aint offsets[5];
 
-	offsets[0] = offsetof(FixedPoint, x);
-	offsets[1] = offsetof(FixedPoint, y);
-	offsets[2] = offsetof(FixedPoint, r);
-	offsets[3] = offsetof(FixedPoint, g);
-	offsets[4] = offsetof(FixedPoint, b);
+	MPI_Type_create_struct(5,
+		(int[]){ [0 ... 4]=1 },
+		offsets,
+		(MPI_Datatype[]){ [0 ... 4]=MPI_INT },
+		&mpi_FixedPoint
+	);
 
-	MPI_Type_create_struct(nitems, blocklengths, offsets, types, &mpi_FixedPoint);
 	MPI_Type_commit(&mpi_FixedPoint);
 
 	return mpi_FixedPoint;
