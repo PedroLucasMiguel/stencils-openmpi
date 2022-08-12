@@ -5,39 +5,15 @@
 #include <string.h>
 
 #define ITERATION_COUNT 1000
-#define N_CHANNELS 3
-#define N_DIM 1
+#define MANAGER_RANK 0 // Rank do processo responsável pela leitura do arquivo e junção de matrizes
 #define MAX_PROCESS 16
-#define MANAGER_ID 0
-
-#define FAKE_IMAGE_ROWS 256
-#define FAKE_IMAGE_COLUMNS 256
-
-void Init_matrix(double*** matrix, int rows, int columns) {
-
-    int i = 0;
-    int j = 0;
-
-    matrix = (double***)malloc(rows * sizeof(double**));
-    
-    for(i = 0; i < rows; i++) {
-        matrix[i] = (double**)malloc(columns * sizeof(double*));
-        
-        for(j = 0; j < columns; j++) {
-            matrix[i][j] = (double*)malloc(N_CHANNELS * sizeof(double)); 
-        }
-    }
-
-}
+#define N_DIM 1
+#define MSG_CODE 1212
 
 int main(int argc, char** argv) {
 
     MPI_Comm newComm; // Novo Comunicador
-    MPI_Status status;
-    
-    // Matrizes
-    double*** matrixToProcess;
-    double*** finalMatrix;
+    MPI_Status status; // Status da mensagem recebida
 
     int nProcesses; // Quantidade de processos que fazem parte do Comunicador
     int processRank; // Rank do processo
@@ -75,6 +51,8 @@ int main(int argc, char** argv) {
     // Recebe a localização do processo superior (se existir) e inferior (se existir)
     MPI_Cart_shift(newComm, 0, 1, &upProcess, &downProcess);
 
+
+    // DEBUG AREA---------------------------------------------------------------------------
     // Exemplo de send and recieve funcional!
     if (processRank == 0){
         MPI_Send(test_0, strlen(test_0), MPI_CHAR, downProcess, 69420, newComm);
