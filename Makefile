@@ -11,13 +11,10 @@ EXECFLAGS := -np 4
 
 default: all
 
-all: $(PROG) clean run
+all: $(PROG) run
 
 $(PROG): $(SRCS)
 	$(CC) -o $@ $(SRCS) $(INCLUDE)
-
-clean:
-	rm -f $(OBJS)
 
 run:
 	$(EXEC) $(EXECFLAGS) $(PROG)
