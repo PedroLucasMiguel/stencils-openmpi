@@ -17,7 +17,12 @@ void printFileData(FileData* data) {
 void readFile(char* path, FileData* data) {
     FILE* f = fopen(path, "r");
 
-    fscanf(f, "%d %d", &(data)->imageSize, &(data)->qtdFixedPoints);
+    if (f == NULL) {
+        printf("\nFILE NOT FOUND/COUL NOT BE READED\n");
+        return;
+    }
+
+    fscanf(f, "%d %d", &data->imageSize, &data->qtdFixedPoints);
 
     data->fixedPoints = malloc(data->qtdFixedPoints * sizeof(int[5]));
     
@@ -28,4 +33,6 @@ void readFile(char* path, FileData* data) {
                                     &data->fixedPoints[i][3],
                                     &data->fixedPoints[i][4]);
     }
+
+    fclose(f);
 }

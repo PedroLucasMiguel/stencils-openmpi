@@ -33,11 +33,9 @@ int main(int argc, char** argv) {
     double test2_2[5];
 
     FileData a;
-    readFile("img01.dat", &a);
-    printFileData(&a);
 
     MPI_Init (&argc, &argv);
-
+   
     // Retorna o número de processos (definido pelo parâmetro -np na execução)
     MPI_Comm_size(MPI_COMM_WORLD, &nProcesses);
 
@@ -60,6 +58,8 @@ int main(int argc, char** argv) {
     // DEBUG AREA---------------------------------------------------------------------------
     // Exemplo de send and recieve funcional!
     if (processRank == 0){
+        readFile("src/img01.dat", &a);
+        printFileData(&a);
         MPI_Send(test_0, strlen(test_0), MPI_CHAR, downProcess, 69420, newComm);
         MPI_Recv(test2, strlen(test_1), MPI_CHAR, downProcess, 69420, newComm, &status);
         MPI_Send(test_00, 5, MPI_DOUBLE, downProcess, 42069, newComm);
