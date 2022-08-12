@@ -25,14 +25,22 @@ int main(int argc, char** argv) {
     int upProcess; // Processo superior
     int downProcess; // Processo inferior
 
+    MPI_Datatype mpi_FixedPoint;
+
     // DEBUG
     char test_0[64] = "Hello World!\0";
     char test_1[64] = "World Hello!\0";
     char test2[64];
     double test_00[5] = {1.0, 2.0, 3.0, 4.0, 5.0};
     double test2_2[5];
-
     FileData a;
+    FixedPoint s;
+    s.x = 6;
+    s.y = 9;
+    s.r = 4;
+    s.g = 2;
+    s.b = 0;
+    FixedPoint r;
 
     MPI_Init (&argc, &argv);
    
@@ -54,6 +62,7 @@ int main(int argc, char** argv) {
     // Recebe a localização do processo superior (se existir) e inferior (se existir)
     MPI_Cart_shift(newComm, 0, 1, &upProcess, &downProcess);
 
+    mpi_FixedPoint = addFixedPointToMpi();
 
     // DEBUG AREA---------------------------------------------------------------------------
     // Exemplo de send and recieve funcional!
@@ -63,6 +72,7 @@ int main(int argc, char** argv) {
         MPI_Send(test_0, strlen(test_0), MPI_CHAR, downProcess, 69420, newComm);
         MPI_Recv(test2, strlen(test_1), MPI_CHAR, downProcess, 69420, newComm, &status);
         MPI_Send(test_00, 5, MPI_DOUBLE, downProcess, 42069, newComm);
+        MPI_Send(&s, 1, mpi_FixedPoint, downProcess, 1212, newComm);
         printf("Process 0 recieved: %s\n", test2);
     }
 
@@ -78,6 +88,10 @@ int main(int argc, char** argv) {
             printf("%f ", test2_2[i]);
         }
         printf("\n");
+
+        MPI_Recv(&r, 1, mpi_FixedPoint, upProcess, 1212, newComm, &status);
+
+        printf("%d %d %d %d %d\n", r.x, r.y, r.r, r.g, r.b);
     }
     
 

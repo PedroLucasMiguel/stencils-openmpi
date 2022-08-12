@@ -1,6 +1,6 @@
 #ifndef FILE_READER_H
 #define FILE_READER_H
-
+#include <mpi.h>
 typedef struct FixedPointsData {
     int x;
     int y;
@@ -15,6 +15,7 @@ typedef struct FileReaderData {
     FixedPoint* fixedPoints;
 }FileData;
 
+MPI_Datatype addFixedPointToMpi();
 void readFile(char* path, FileData* data);
 void printFileData(FileData* data);
 
