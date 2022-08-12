@@ -32,9 +32,8 @@ int main(int argc, char** argv) {
     double test_00[5] = {1.0, 2.0, 3.0, 4.0, 5.0};
     double test2_2[5];
 
-    FileData a;
-    readFile("img01.dat", &a);
-    printFileData(&a);
+    ImageData d = readImageFile("resources/img01.dat");
+    printImageData(&d);
 
     MPI_Init (&argc, &argv);
 
