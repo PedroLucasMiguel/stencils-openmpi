@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <mpi.h>
 
+#include <string.h>
+
 #define ITERATION_COUNT 1000
 #define N_CHANNELS 3
 #define N_DIM 1
@@ -30,20 +32,28 @@ void Init_matrix(double*** matrix, int rows, int columns) {
 
 int main(int argc, char** argv) {
 
-    MPI_Comm newComm; // Novo Cartesiano
+    MPI_Comm newComm; // Novo Comunicador
+    MPI_Status status;
     
     // Matrizes
     double*** matrixToProcess;
     double*** finalMatrix;
 
-    int nProcesses; // Quantidade de processos que fazem parte do Cartesiano
+    int nProcesses; // Quantidade de processos que fazem parte do Comunicador
     int processRank; // Rank do processo
-    int dims; // Quantidade de dimensões para o novo Cartesiano
-    int periods = 0; // Indica se o novo Cartesiano será periódico ou não (0 e N se conectam)
-    int reorder = 1; // Indica se os processos no novo Cartesiano podem ser reordenados
-    int coords; // Coordenada do processo dentro do Cartesiano
+    int dims; // Quantidade de dimensões para o novo Comunicador
+    int periods = 0; // Indica se o novo Comunicador será periódico ou não (0 e N se conectam)
+    int reorder = 1; // Indica se os processos no novo Comunicador podem ser reordenados
+    int coords; // Coordenada do processo dentro do Comunicador
     int upProcess; // Processo superior
     int downProcess; // Processo inferior
+
+    // DEBUG
+    char test_0[64] = "Hello World!\0";
+    char test_1[64] = "World Hello!\0";
+    char test2[64];
+    double test_00[5] = {1.0, 2.0, 3.0, 4.0, 5.0};
+    double test2_2[5];
 
     MPI_Init (&argc, &argv);
 
@@ -59,11 +69,34 @@ int main(int argc, char** argv) {
     // Armazena o rank do processo em "processRank"
     MPI_Comm_rank(newComm, &processRank);
 
-    // Recebe a localização desse processo dentro do Cartesiano e armazena em "coords"
+    // Recebe a localização desse processo dentro do Comunicador e armazena em "coords"
     MPI_Cart_get(newComm, MAX_PROCESS, &dims, &periods, &coords);
 
     // Recebe a localização do processo superior (se existir) e inferior (se existir)
     MPI_Cart_shift(newComm, 0, 1, &upProcess, &downProcess);
+
+    // Exemplo de send and recieve funcional!
+    if (processRank == 0){
+        MPI_Send(test_0, strlen(test_0), MPI_CHAR, downProcess, 69420, newComm);
+        MPI_Recv(test2, strlen(test_1), MPI_CHAR, downProcess, 69420, newComm, &status);
+        MPI_Send(test_00, 5, MPI_DOUBLE, downProcess, 42069, newComm);
+        printf("Process 0 recieved: %s\n", test2);
+    }
+
+    else if (processRank == 1) {
+        MPI_Send(test_1, strlen(test_1), MPI_CHAR, upProcess, 69420, newComm);
+        MPI_Recv(test2, strlen(test_0), MPI_CHAR, upProcess, 69420, newComm, &status); 
+
+        printf("Process 1 recieved: %s\n", test2);
+
+        MPI_Recv(test2_2, 5, MPI_DOUBLE, upProcess, 42069, newComm, &status);
+
+        for(int i = 0; i < 5; i ++) {
+            printf("%f ", test2_2[i]);
+        }
+        printf("\n");
+    }
+    
 
     MPI_Finalize();
 }
