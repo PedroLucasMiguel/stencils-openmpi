@@ -10,13 +10,11 @@ static int readIntFromFile(FILE* const f)
 	return i;
 }
 
-static Color readColorFromFile(FILE* const f)
+static Color readColorFromFile(FILE* f)
 {
-	return (Color){
-		.r = readIntFromFile(f),
-		.g = readIntFromFile(f),
-		.b = readIntFromFile(f),
-	};
+	Color c;
+	fscanf(f, "%d %d %d", &c.channels[R], &c.channels[G], &c.channels[B]);
+	return c;
 }
 
 static FixedPoint* readFixedPointsFromFile(FILE* const f, int const count)
@@ -59,9 +57,9 @@ ImageData readImageFile(const char* const path)
 	return imageData;
 }
 
-void printColor(FILE* const out, const Color c)
+void printColor(FILE* out, const Color c)
 {
-	fprintf(out, "< %d, %d, %d >", c.r, c.g, c.b);
+	fprintf(out, "< %d, %d, %d >", c.channels[R], c.channels[G], c.channels[B]);
 }
 
 void printFixedPoint(FILE* const out, const FixedPoint fp)
@@ -87,11 +85,12 @@ MPI_Datatype getColorDatatype()
 	if (committedDatatype != MPI_DATATYPE_NULL)
 		return committedDatatype;
 
-	MPI_Type_create_struct(3, (int[]){ 1, 1, 1 }, (MPI_Aint[]){
-		offsetof(Color, r),
-		offsetof(Color, g),
-		offsetof(Color, b),
-	}, (MPI_Datatype[]){ MPI_INT, MPI_INT, MPI_INT, }, &committedDatatype);
+	MPI_Type_create_struct(
+		1, (int[]){ 3 },
+		(MPI_Aint[]){ offsetof(Color, channels), },
+		(MPI_Datatype[]){ MPI_INT },
+		&committedDatatype
+	);
 
 	MPI_Type_commit(&committedDatatype);
 

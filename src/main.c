@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include <mpi.h>
 #include <string.h>
+#include <mpi.h>
 
 #include "../include/FileReader.h"
 
@@ -63,6 +63,8 @@ typedef struct
     }0
 
 #define GRAY (Color){ 127, 127, 127, }
+
+#define WHITE (Color){ 0, 0, 0, }
 
 #define ITERATION_COUNT 10000
 
@@ -156,16 +158,18 @@ Color getPixelAt(
 
 Color averageColorOf(const Color colors[const 5])
 {
-	Color result = { 0, 0, 0, };
+	Color result = WHITE;
 
 	for (int i = 0; i < 5; ++i)
 	{
-		result.r += colors[i].r;
-		result.g += colors[i].g;
-		result.b += colors[i].b;
+		for (int c = R; c <= B; ++c)
+			result.channels[c] += colors[i].channels[c];
 	}
 
-	return (Color){ result.r / 5, result.g / 5, result.b / 5, };
+	for (int c = R; c <= B; ++c)
+		result.channels[c] /= 5;
+
+	return result;
 }
 
 void doStencilIteration(
@@ -218,7 +222,7 @@ void start_procedure(MPI_Comm comm, const int numProcesses)
 
 	for (int i = 0; i < lineCount; ++i)
 		for (int j = 0; j < imageData.size; ++j)
-			image[i][j] = (Color){ 0, 0, 0 };
+			image[i][j] = WHITE;
 
 	updateFixedPoints(imageData, image, start, end);
 
