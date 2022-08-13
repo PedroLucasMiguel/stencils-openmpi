@@ -93,21 +93,23 @@ int main(int argc, char** argv)
 
 void updateFixedPoints(ImageData data, Color (* image)[data.size], int start, int end);
 
-void printImageLine(const int len, const Color image[len])
+void printImageLine(const int len, const Color image[len], FILE* f)
 {
 	for (int i = 0; i < len; ++i)
 	{
-		printColor(stdout, image[i]);
-		putchar(' ');
+		printColor((f) ? f : stdout, image[i]);
+		(f) ? fputc(' ', f) : putchar(' ');
 	}
-	putchar('\n');
+	
+	(f) ? fputc('\n', f) : putchar('\n');
 }
 
-void printImage(const int height, const int width, const Color image[const height][width])
+void printImage(const int height, const int width, const Color image[const height][width], FILE* f)
 {
+
 	for (int i = 0; i < height; ++i)
 	{
-		printImageLine(width, image[i]);
+		printImageLine(width, image[i], f);
 	}
 }
 
@@ -252,8 +254,10 @@ void start_procedure(MPI_Comm comm, const int numProcesses)
 	// Uncomment line below if processesses' prints are getting in the way of the image
 //	MPI_Barrier(comm);
 	IF_COORDINATOR(myRank, {
-		debug_print(myRank, "Final Image:\n");
-		printImage(imageData.size, imageData.size, finalImage);
+		debug_print(myRank, "Output at \"output.txt\"\n");
+		FILE* f = fopen("output.txt", "w");
+		printImage(imageData.size, imageData.size, finalImage, f);
+		fclose(f);
 	});
 
 	free(imageData.fixedPoints);
