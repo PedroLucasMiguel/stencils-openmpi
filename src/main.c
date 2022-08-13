@@ -77,7 +77,7 @@ Neighbors getNeighbors(MPI_Comm comm)
 	return (Neighbors){ up, down };
 }
 
-void start_procedure(MPI_Comm comm, int numProcesses);
+void start_procedure(MPI_Comm comm, int numProcesses, const char* inFilePath, const char* outFilePath);
 
 int main(int argc, char** argv)
 {
@@ -86,7 +86,7 @@ int main(int argc, char** argv)
 	const int numProcesses = getNumProcesses(MPI_COMM_WORLD);
 	MPI_Comm newComm = arrangeProcesses(numProcesses);
 
-	start_procedure(newComm, numProcesses);
+	start_procedure(newComm, numProcesses, "resources/img01.dat", "output.txt");
 
 	MPI_Finalize();
 
@@ -120,12 +120,12 @@ void fillWithGray(const int size, Color arr[size])
 		arr[i] = GRAY;
 }
 
-ImageData getImageData(const int myRank, MPI_Comm comm)
+ImageData getImageData(const int myRank, MPI_Comm comm, const char* const filePath)
 {
 	ImageData imageData = { 0, 0, NULL };
 
 	IF_COORDINATOR(myRank, {
-		imageData = readImageFile("resources/img01.dat");
+		imageData = readImageFile(filePath);
 		printImageData(stdout, imageData);
 	});
 
@@ -206,12 +206,12 @@ void doStencilIteration(
 	memcpy(image, newImage, sizeof newImage);
 }
 
-void start_procedure(MPI_Comm comm, const int numProcesses)
+void start_procedure(MPI_Comm comm, const int numProcesses, const char* const inFilePath, const char* const outFilePath)
 {
 	const int myRank = getProcessRank(comm);
 
 	// TODO: Individualize fixed points
-	const ImageData imageData = getImageData(myRank, comm);
+	const ImageData imageData = getImageData(myRank, comm, inFilePath);
 
 	const int lineCount = imageData.size / numProcesses;
 	const int start = lineCount * myRank; // Inclusive
@@ -266,8 +266,8 @@ void start_procedure(MPI_Comm comm, const int numProcesses)
 	);
 
 	IF_COORDINATOR(myRank, {
-		debug_print(myRank, "Output at \"output.txt\"\n");
-		FILE* const f = fopen("output.txt", "w");
+		debug_print(myRank, "Output at %s\n", outFilePath);
+		FILE* const f = fopen(outFilePath, "w");
 		printImage(f, imageData.size, imageData.size, finalImage);
 		fclose(f);
 	});
