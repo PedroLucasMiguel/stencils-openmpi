@@ -133,7 +133,7 @@ ImageData getImageData(const int myRank, MPI_Comm comm, const char* const filePa
 	ImageData imageData = { 0, 0, NULL };
 
 	IF_COORDINATOR(myRank, {
-		imageData = readImageFile(filePath);
+		imageData = readImageDataFile(filePath);
 		printImageData(stdout, imageData);
 	});
 

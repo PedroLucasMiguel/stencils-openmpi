@@ -11,25 +11,7 @@ static int readIntFromFile(FILE* const f)
 	return i;
 }
 
-
-
-static FixedPoint* readFixedPointsFromFile(FILE* const f, int const count)
-{
-	FixedPoint* const fixedPoints = malloc(count * sizeof *fixedPoints);
-
-	for (int i = 0; i < count; ++i)
-	{
-		fixedPoints[i] = (FixedPoint){
-			.x = readIntFromFile(f),
-			.y = readIntFromFile(f),
-			.color = readColorFromFile(f),
-		};
-	}
-
-	return fixedPoints;
-}
-
-ImageData readImageFile(const char* const path)
+ImageData readImageDataFile(const char* const path)
 {
 	FILE* const f = fopen(path, "r");
 
@@ -39,14 +21,10 @@ ImageData readImageFile(const char* const path)
 		exit(EXIT_FAILURE);
 	}
 
-	const int size = readIntFromFile(f);
-	const int fixedPointCount = readIntFromFile(f);
+	ImageData imageData;
 
-	const ImageData imageData = (ImageData){
-		.size = size,
-		.fixedPointCount = fixedPointCount,
-		.fixedPoints = readFixedPointsFromFile(f, fixedPointCount),
-	};
+	fscanf(f, "%d %d", &imageData.size, &imageData.fixedPointCount);
+	imageData.fixedPoints = readFixedPointsFromFile(f, imageData.fixedPointCount);
 
 	fclose(f);
 

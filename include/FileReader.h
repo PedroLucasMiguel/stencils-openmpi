@@ -3,17 +3,7 @@
 
 #include <mpi.h>
 
-#include "Color.h"
-
-typedef struct
-{
-	int x;
-	int y;
-	Color color;
-} FixedPoint;
-
-MPI_Datatype getFixedPointDatatype();
-#define FIXED_POINT_TYPE getFixedPointDatatype()
+#include "FixedPoint.h"
 
 typedef struct
 {
@@ -22,9 +12,7 @@ typedef struct
 	FixedPoint* fixedPoints;
 } ImageData;
 
-ImageData readImageFile(const char* path);
+ImageData readImageDataFile(const char* path);
 void printImageData(FILE* out, ImageData data);
-void printFixedPoint(FILE* out, FixedPoint fp);
-
 
 #endif
