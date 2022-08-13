@@ -10,6 +10,8 @@
 enum MessageTags
 {
 	TAG_ANY = 1,
+	TAG_COMM_UP,
+	TAG_COMM_DOWN,
 };
 
 __attribute__((format(printf, 2, 3)))
@@ -51,13 +53,10 @@ typedef struct
 	int down;
 } Neighbors;
 
-#define LINEAR 0
-#define ADJACENT 1
-
-#define RANK_COORDINATOR 0
+#define COORDINATOR_RANK 0
 
 #define IF_COORDINATOR(RANK, CODE) \
-    if ((RANK) == RANK_COORDINATOR) {\
+    if ((RANK) == COORDINATOR_RANK) {\
         do {                  \
             CODE              \
         } while (0);          \
@@ -69,6 +68,8 @@ typedef struct
 
 Neighbors getNeighbors(MPI_Comm comm)
 {
+#define LINEAR 0
+#define ADJACENT 1
 	int up;
 	int down;
 	MPI_Cart_shift(comm, LINEAR, ADJACENT, &up, &down);
@@ -93,23 +94,22 @@ int main(int argc, char** argv)
 
 void updateFixedPoints(ImageData data, Color (* image)[data.size], int start, int end);
 
-void printImageLine(const int len, const Color image[len], FILE* f)
+void printImageLine(FILE* const out, const int len, const Color image[len])
 {
 	for (int i = 0; i < len; ++i)
 	{
-		printColor((f) ? f : stdout, image[i]);
-		(f) ? fputc(' ', f) : putchar(' ');
+		printColor(out, image[i]);
+		putc(' ', out);
 	}
-	
-	(f) ? fputc('\n', f) : putchar('\n');
+	putc('\n', out);
 }
 
-void printImage(const int height, const int width, const Color image[const height][width], FILE* f)
+void printImage(FILE* const out, const int height, const int width, const Color image[height][width])
 {
 
 	for (int i = 0; i < height; ++i)
 	{
-		printImageLine(width, image[i], f);
+		printImageLine(out, width, image[i]);
 	}
 }
 
@@ -128,11 +128,11 @@ ImageData getImageData(const int myRank, MPI_Comm comm)
 		printImageData(stdout, imageData);
 	});
 
-	MPI_Bcast(&imageData.size, 1, MPI_INT, RANK_COORDINATOR, comm);
-	MPI_Bcast(&imageData.fixedPointCount, 1, MPI_INT, RANK_COORDINATOR, comm);
+	MPI_Bcast(&imageData.size, 1, MPI_INT, COORDINATOR_RANK, comm);
+	MPI_Bcast(&imageData.fixedPointCount, 1, MPI_INT, COORDINATOR_RANK, comm);
 
 	imageData.fixedPoints = realloc(imageData.fixedPoints, imageData.fixedPointCount * sizeof(FixedPoint));
-	MPI_Bcast(imageData.fixedPoints, imageData.fixedPointCount, FIXED_POINT_TYPE, RANK_COORDINATOR, comm);
+	MPI_Bcast(imageData.fixedPoints, imageData.fixedPointCount, FIXED_POINT_TYPE, COORDINATOR_RANK, comm);
 
 	return imageData;
 }
@@ -167,25 +167,34 @@ Color averageColorOf(const Color colors[const 5])
 
 	return (Color){ result.r / 5, result.g / 5, result.b / 5, };
 }
+
 void doStencilIteration(
 	const int height, const int width,
 	Color image[const height][width],
 	const Color top[const width], const Color bottom[const width])
 {
+	const static int stencilOffsets[][2] = {
+		{ 0, 0, }, { -1, 0, }, { +1, 0, }, { 0, -1, }, { 0, +1, },
+	};
+
 	Color newImage[height][width];
-	memset(newImage, 0, sizeof newImage);
 
 	for (int i = 0; i < height; ++i)
 	{
 		for (int j = 0; j < width; ++j)
 		{
-			Color neighborUp = getPixelAt(i - 1, j, height, width, image, top, bottom);
-			Color neighborDown = getPixelAt(i + 1, j, height, width, image, top, bottom);
-			Color neighborLeft = getPixelAt(i, j - 1, height, width, image, top, bottom);
-			Color neighborRight = getPixelAt(i, j + 1, height, width, image, top, bottom);
+			Color stencilPixels[5] = {};
 
-			newImage[i][j] = averageColorOf((Color[]){
-				image[i][j], neighborUp, neighborDown, neighborLeft, neighborRight });
+			for (int p = 0; p < 5; ++p)
+			{
+				stencilPixels[p] = getPixelAt(
+					i + stencilOffsets[p][0],
+					j + stencilOffsets[p][1],
+					height, width, image, top, bottom
+				);
+			}
+
+			newImage[i][j] = averageColorOf(stencilPixels);
 		}
 	}
 
@@ -248,15 +257,13 @@ void start_procedure(MPI_Comm comm, const int numProcesses)
 
 	MPI_Gather(
 		&image[0][0], imageData.size * lineCount, COLOR_TYPE,
-		&finalImage[0][0], imageData.size * lineCount, COLOR_TYPE, RANK_COORDINATOR, comm
+		&finalImage[0][0], imageData.size * lineCount, COLOR_TYPE, COORDINATOR_RANK, comm
 	);
 
-	// Uncomment line below if processesses' prints are getting in the way of the image
-//	MPI_Barrier(comm);
 	IF_COORDINATOR(myRank, {
 		debug_print(myRank, "Output at \"output.txt\"\n");
-		FILE* f = fopen("output.txt", "w");
-		printImage(imageData.size, imageData.size, finalImage, f);
+		FILE* const f = fopen("output.txt", "w");
+		printImage(f, imageData.size, imageData.size, finalImage);
 		fclose(f);
 	});
 
