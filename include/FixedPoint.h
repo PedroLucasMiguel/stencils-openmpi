@@ -22,5 +22,4 @@ void printFixedPoint(FILE* out, FixedPoint fp);
 __attribute__((malloc))
 FixedPoint* readFixedPointsFromFile(FILE* f, int count);
 
-
 #endif // FIXEDPOINT_H

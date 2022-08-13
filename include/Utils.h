@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include "Color.h"
+
 extern int const COORDINATOR_RANK;
 
 #define IF_COORDINATOR(RANK, CODE) \
@@ -17,5 +19,7 @@ enum MessageTags
 };
 
 void debug_print(int rank, const char* fmt, ...);
+
+void fillWithGray(int len, Color arr[len]);
 
 #endif // UTILS_H

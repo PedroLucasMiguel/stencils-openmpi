@@ -16,3 +16,11 @@ void debug_print(const int rank, const char* const fmt, ...)
 
 	va_end(args);
 }
+
+void fillWithGray(const int len, Color arr[len])
+{
+	for (int i = 0; i < len; ++i)
+	{
+		arr[i] = GRAY;
+	}
+}
