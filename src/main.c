@@ -211,9 +211,6 @@ void start_procedure(MPI_Comm comm, const int numProcesses)
 
 	updateFixedPoints(imageData, image, start, end);
 
-//	debug_print(myRank, "My image:\n");
-//	printImage(lineCount, imageData.size, image);
-
 	Color fromTop[imageData.size];
 	Color fromBottom[imageData.size];
 
@@ -252,23 +249,15 @@ void start_procedure(MPI_Comm comm, const int numProcesses)
 		&finalImage[0][0], imageData.size * lineCount, COLOR_TYPE, RANK_COORDINATOR, comm
 	);
 
-	MPI_Barrier(comm);
+	// Uncomment line below if processesses' prints are getting in the way of the image
+//	MPI_Barrier(comm);
 	IF_COORDINATOR(myRank, {
 		debug_print(myRank, "Final Image:\n");
 		printImage(imageData.size, imageData.size, finalImage);
 	});
 
-//	debug_print(myRank, "up: %d | down: %d\n", myNeighbors.up, myNeighbors.down);
-
-
-
-
-
-//	updateFixedPoints(imageData, image, start, end);
-
-
-
 	free(imageData.fixedPoints);
+	free(finalImage);
 }
 
 void updateFixedPoints(const ImageData data, Color (* image)[data.size], const int start, const int end)
@@ -277,7 +266,7 @@ void updateFixedPoints(const ImageData data, Color (* image)[data.size], const i
 	{
 		const FixedPoint fp = data.fixedPoints[i];
 
-		if (start <= fp.y && fp.y < end)
+		if (start <= fp.x && fp.x < end)
 		{
 			image[fp.x - start][fp.y] = fp.color;
 		}
