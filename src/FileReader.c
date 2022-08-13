@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "../include/Color.h"
 #include "../include/FileReader.h"
 
 static int readIntFromFile(FILE* const f)
@@ -10,12 +11,7 @@ static int readIntFromFile(FILE* const f)
 	return i;
 }
 
-static Color readColorFromFile(FILE* f)
-{
-	Color c;
-	fscanf(f, "%d %d %d", &c.channels[R], &c.channels[G], &c.channels[B]);
-	return c;
-}
+
 
 static FixedPoint* readFixedPointsFromFile(FILE* const f, int const count)
 {
@@ -57,10 +53,7 @@ ImageData readImageFile(const char* const path)
 	return imageData;
 }
 
-void printColor(FILE* out, const Color c)
-{
-	fprintf(out, "< %d, %d, %d >", c.channels[R], c.channels[G], c.channels[B]);
-}
+
 
 void printFixedPoint(FILE* const out, const FixedPoint fp)
 {
@@ -76,25 +69,6 @@ void printImageData(FILE* const out, const ImageData data)
 
 	for (int i = 0; i < data.fixedPointCount; i++)
 		printFixedPoint(out, data.fixedPoints[i]);
-}
-
-MPI_Datatype getColorDatatype()
-{
-	static MPI_Datatype committedDatatype = MPI_DATATYPE_NULL;
-
-	if (committedDatatype != MPI_DATATYPE_NULL)
-		return committedDatatype;
-
-	MPI_Type_create_struct(
-		1, (int[]){ 3 },
-		(MPI_Aint[]){ offsetof(Color, channels), },
-		(MPI_Datatype[]){ MPI_INT },
-		&committedDatatype
-	);
-
-	MPI_Type_commit(&committedDatatype);
-
-	return committedDatatype;
 }
 
 MPI_Datatype getFixedPointDatatype()

@@ -1,21 +1,9 @@
 #ifndef FILE_READER_H
 #define FILE_READER_H
+
 #include <mpi.h>
 
-enum Channel
-{
-	R = 0,
-	G = 1,
-	B = 2,
-};
-
-typedef struct
-{
-	int channels[3];
-} Color;
-
-MPI_Datatype getColorDatatype();
-#define COLOR_TYPE getColorDatatype()
+#include "Color.h"
 
 typedef struct
 {
@@ -37,6 +25,6 @@ typedef struct
 ImageData readImageFile(const char* path);
 void printImageData(FILE* out, ImageData data);
 void printFixedPoint(FILE* out, FixedPoint fp);
-void printColor(FILE* out, Color c);
+
 
 #endif

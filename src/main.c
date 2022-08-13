@@ -5,6 +5,7 @@
 #include <string.h>
 #include <mpi.h>
 
+#include "../include/Color.h"
 #include "../include/FileReader.h"
 
 enum MessageTags
@@ -61,8 +62,7 @@ typedef struct
         } while (0);          \
     }0
 
-#define GRAY (Color){ 127, 127, 127, }
-#define WHITE (Color){ 0, 0, 0, }
+
 
 #define ITERATION_COUNT 10000
 
