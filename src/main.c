@@ -3,6 +3,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <mpi.h>
+#include <string.h>
 
 #include "../include/FileReader.h"
 
@@ -64,6 +65,8 @@ typedef struct
 
 #define GRAY (Color){ 127, 127, 127, }
 
+#define ITERATION_COUNT 10000
+
 Neighbors getNeighbors(MPI_Comm comm)
 {
 	int up;
@@ -100,11 +103,11 @@ void printImageLine(const int len, const Color image[len])
 	putchar('\n');
 }
 
-void printImage(const int iSize, const int jSize, const Color image[const iSize][jSize])
+void printImage(const int height, const int width, const Color image[const height][width])
 {
-	for (int i = 0; i < iSize; ++i)
+	for (int i = 0; i < height; ++i)
 	{
-		printImageLine(jSize, image[i]);
+		printImageLine(width, image[i]);
 	}
 }
 
@@ -119,7 +122,7 @@ ImageData getImageData(const int myRank, MPI_Comm comm)
 	ImageData imageData = { 0, 0, NULL };
 
 	IF_COORDINATOR(myRank, {
-		imageData = readImageFile("resources/small_test.dat");
+		imageData = readImageFile("resources/img01.dat");
 		printImageData(stdout, imageData);
 	});
 
@@ -132,10 +135,66 @@ ImageData getImageData(const int myRank, MPI_Comm comm)
 	return imageData;
 }
 
+Color getPixelAt(
+	int i, int j,
+	const int height, const int width,
+	const Color image[height][width],
+	const Color top[width], const Color bottom[width])
+{
+	if (i < 0)
+		return top[j];
+	if (i >= height)
+		return bottom[j];
+
+	if (j < 0 || j >= width)
+		return GRAY;
+
+	return image[i][j];
+}
+
+Color averageColorOf(const Color colors[const 5])
+{
+	Color result = { 0, 0, 0, };
+
+	for (int i = 0; i < 5; ++i)
+	{
+		result.r += colors[i].r;
+		result.g += colors[i].g;
+		result.b += colors[i].b;
+	}
+
+	return (Color){ result.r / 5, result.g / 5, result.b / 5, };
+}
+void doStencilIteration(
+	const int height, const int width,
+	Color image[const height][width],
+	const Color top[const width], const Color bottom[const width])
+{
+	Color newImage[height][width];
+	memset(newImage, 0, sizeof newImage);
+
+	for (int i = 0; i < height; ++i)
+	{
+		for (int j = 0; j < width; ++j)
+		{
+			Color neighborUp = getPixelAt(i - 1, j, height, width, image, top, bottom);
+			Color neighborDown = getPixelAt(i + 1, j, height, width, image, top, bottom);
+			Color neighborLeft = getPixelAt(i, j - 1, height, width, image, top, bottom);
+			Color neighborRight = getPixelAt(i, j + 1, height, width, image, top, bottom);
+
+			newImage[i][j] = averageColorOf((Color[]){
+				image[i][j], neighborUp, neighborDown, neighborLeft, neighborRight });
+		}
+	}
+
+	memcpy(image, newImage, height * width * sizeof(Color));
+}
+
 void start_procedure(MPI_Comm comm, const int numProcesses)
 {
 	const int myRank = getProcessRank(comm);
 
+	// TODO: Individualize fixed points
 	const ImageData imageData = getImageData(myRank, comm);
 
 	const int lineCount = imageData.size / numProcesses;
@@ -152,40 +211,62 @@ void start_procedure(MPI_Comm comm, const int numProcesses)
 
 	updateFixedPoints(imageData, image, start, end);
 
-	debug_print(myRank, "My image:\n");
-	printImage(lineCount, imageData.size, image);
+//	debug_print(myRank, "My image:\n");
+//	printImage(lineCount, imageData.size, image);
 
 	Color fromTop[imageData.size];
-	fillWithGray(imageData.size, fromTop);
-
 	Color fromBottom[imageData.size];
+
+	fillWithGray(imageData.size, fromTop);
 	fillWithGray(imageData.size, fromBottom);
 
 	const Neighbors myNeighbors = getNeighbors(comm);
-	debug_print(myRank, "up: %d | down: %d\n", myNeighbors.up, myNeighbors.down);
 
-	// Send down, receive up
-	MPI_Sendrecv(
-		&image[lineCount - 1][0], imageData.size, COLOR_TYPE, myNeighbors.down, TAG_ANY,
-		&fromTop[0], imageData.size, COLOR_TYPE, myNeighbors.up, TAG_ANY, comm, MPI_STATUS_IGNORE
+	for (int i = 0; i < ITERATION_COUNT; ++i)
+	{
+		// Send down, receive up
+		MPI_Sendrecv(
+			&image[lineCount - 1][0], imageData.size, COLOR_TYPE, myNeighbors.down, TAG_ANY,
+			&fromTop[0], imageData.size, COLOR_TYPE, myNeighbors.up, TAG_ANY, comm, MPI_STATUS_IGNORE
+		);
+
+		// Send up, receive down
+		MPI_Sendrecv(
+			&image[0][0], imageData.size, COLOR_TYPE, myNeighbors.up, TAG_ANY,
+			&fromBottom[0], imageData.size, COLOR_TYPE, myNeighbors.down, TAG_ANY, comm, MPI_STATUS_IGNORE
+		);
+
+		doStencilIteration(lineCount, imageData.size, image, fromTop, fromBottom);
+
+		updateFixedPoints(imageData, image, start, end);
+	}
+
+	Color(* finalImage)[imageData.size] = NULL;
+
+	IF_COORDINATOR(myRank, {
+		finalImage = malloc(imageData.size * sizeof *finalImage);
+	});
+
+	MPI_Gather(
+		&image[0][0], imageData.size * lineCount, COLOR_TYPE,
+		&finalImage[0][0], imageData.size * lineCount, COLOR_TYPE, RANK_COORDINATOR, comm
 	);
 
-	debug_print(myRank, "receive from [up] %d:", myNeighbors.up);
-	printImageLine(imageData.size, fromTop);
+	MPI_Barrier(comm);
+	IF_COORDINATOR(myRank, {
+		debug_print(myRank, "Final Image:\n");
+		printImage(imageData.size, imageData.size, finalImage);
+	});
 
-	// Send up, receive down
-	MPI_Sendrecv(
-		&image[0][0], imageData.size, COLOR_TYPE, myNeighbors.up, TAG_ANY,
-		&fromBottom[0], imageData.size, COLOR_TYPE, myNeighbors.down, TAG_ANY, comm, MPI_STATUS_IGNORE
-	);
+//	debug_print(myRank, "up: %d | down: %d\n", myNeighbors.up, myNeighbors.down);
 
-	debug_print(myRank, "receive from [down] %d:", myNeighbors.down);
-	printImageLine(imageData.size, fromBottom);
+
+
+
 
 //	updateFixedPoints(imageData, image, start, end);
 
-//	debug_print(myRank, "My image:\n");
-//	printImage(lineCount, imageData.size, image);
+
 
 	free(imageData.fixedPoints);
 }
