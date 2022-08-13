@@ -12,7 +12,7 @@ typedef struct
 	FixedPoint* fixedPoints;
 } ImageData;
 
-void setFixedPointsOnImage(ImageData data, Color (* image)[data.size]);
+void setFixedPointsOnImageSlice(const ImageData data, Color (* image)[data.size]);
 
 ImageData readImageData(const char* path);
 void printImageData(FILE* out, ImageData data);

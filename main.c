@@ -26,7 +26,7 @@ void runProcedure(MPI_Comm comm, int numProcesses, const char* inFilePath, const
 {
 	const int myRank = getProcessRank(comm);
 
-	ImageData imageData = getImageData(myRank, comm, inFilePath);
+	ImageData imageData = getBroadcastImageData(myRank, comm, inFilePath);
 
 	const int lineCount = imageData.size / numProcesses;
 	const int start = lineCount * myRank; // Inclusive
@@ -42,7 +42,7 @@ void runProcedure(MPI_Comm comm, int numProcesses, const char* inFilePath, const
 		for (int j = 0; j < imageData.size; ++j)
 			myImage[i][j] = WHITE;
 
-	setFixedPointsOnImage(imageData, myImage);
+	setFixedPointsOnImageSlice(imageData, myImage);
 
 	Color adjLines[2][imageData.size];
 	fillWithGray(imageData.size, adjLines[0]);
@@ -55,7 +55,7 @@ void runProcedure(MPI_Comm comm, int numProcesses, const char* inFilePath, const
 		IF_COORDINATOR(myRank, {
 			if (i % 1000 == 0)
 			{
-				debug_print(myRank, "Starting iteration #%d\n", i + 1);
+				debug_print(myRank, "Starting iteration #%d\n", i);
 			}
 		});
 
@@ -77,7 +77,7 @@ void runProcedure(MPI_Comm comm, int numProcesses, const char* inFilePath, const
 			{ adjLines[0], adjLines[1] }
 		});
 
-		setFixedPointsOnImage(imageData, myImage);
+		setFixedPointsOnImageSlice(imageData, myImage);
 	}
 
 	Color(* finalImage)[imageData.size] = NULL;

@@ -3,7 +3,7 @@
 
 #include "../include/Image.h"
 
-void setFixedPointsOnImage(const ImageData data, Color (* image)[data.size])
+void setFixedPointsOnImageSlice(const ImageData data, Color (* image)[data.size])
 {
 	for (int i = 0; i < data.fixedPointCount; ++i)
 	{

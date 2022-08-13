@@ -3,14 +3,18 @@
 #include "../include/Iteration.h"
 #include "../include/Communication.h"
 
+#define ARR_LEN(A) (sizeof (A) / sizeof *(A))
+
 Color getPixelAt(int i, int j, const IterationData d)
 {
-	if (i < 0)
+	// Check if pixel is from a neighbor
+	if (i == -1)
 		return d.adj[TOP][j];
-	if (i >= d.h)
+	if (i == d.h)
 		return d.adj[BOTTOM][j];
 
-	if (j < 0 || j >= d.w)
+	// Check if pixel is on the imaginary gray border
+	if (j == -1 || j == d.w)
 		return GRAY;
 
 	return d.image[i * d.w + j];
@@ -32,8 +36,6 @@ Color averageColorOf(const Color colors[const 5])
 	return result;
 }
 
-#define ARR_LEN(A) (sizeof (A) / sizeof *(A))
-
 void doStencilIteration(const IterationData d)
 {
 	const static int stencilOffsets[][2] = {
@@ -50,7 +52,7 @@ void doStencilIteration(const IterationData d)
 				[0] = d.image[i * d.w + j],
 			};
 
-			// Skip self (0, 0) since we know it is going to be inbounds
+			// Skip offset (0, 0) since we know it is going to be inbounds
 			for (int p = 1; p < ARR_LEN(stencilOffsets); ++p)
 			{
 				stencilPixels[p] = getPixelAt(

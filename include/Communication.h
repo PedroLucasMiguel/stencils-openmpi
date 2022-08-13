@@ -24,6 +24,6 @@ typedef struct
 
 NeighborsIds getNeighborsIds(MPI_Comm comm);
 
-ImageData getImageData(int myRank, MPI_Comm comm, const char* filePath);
+ImageData getBroadcastImageData(int myRank, MPI_Comm comm, const char* filePath);
 
 #endif // COMMUNICATION_H

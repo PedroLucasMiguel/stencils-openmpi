@@ -36,7 +36,7 @@ NeighborsIds getNeighborsIds(MPI_Comm comm)
 	return (NeighborsIds){ up, down };
 }
 
-ImageData getImageData(const int myRank, MPI_Comm comm, const char* const filePath)
+ImageData getBroadcastImageData(int myRank, MPI_Comm comm, const char* filePath)
 {
 	ImageData imageData = { 0, 0, NULL };
 
