@@ -82,18 +82,36 @@ void printImageData(FILE* const out, const ImageData data)
 
 MPI_Datatype getColorDatatype()
 {
-	static MPI_Datatype compiledDatatype = MPI_DATATYPE_NULL;
+	static MPI_Datatype committedDatatype = MPI_DATATYPE_NULL;
 
-	if (compiledDatatype != MPI_DATATYPE_NULL)
-		return compiledDatatype;
+	if (committedDatatype != MPI_DATATYPE_NULL)
+		return committedDatatype;
 
-	MPI_Type_create_struct(3, (int[]){ 1, 1, 1 }, (MPI_Aint []){
+	MPI_Type_create_struct(3, (int[]){ 1, 1, 1 }, (MPI_Aint[]){
 		offsetof(Color, r),
 		offsetof(Color, g),
 		offsetof(Color, b),
-	}, (MPI_Datatype[]){ MPI_INT, MPI_INT, MPI_INT, }, &compiledDatatype);
+	}, (MPI_Datatype[]){ MPI_INT, MPI_INT, MPI_INT, }, &committedDatatype);
 
-	MPI_Type_commit(&compiledDatatype);
+	MPI_Type_commit(&committedDatatype);
 
-	return compiledDatatype;
+	return committedDatatype;
+}
+
+MPI_Datatype getFixedPointDatatype()
+{
+	static MPI_Datatype committedDatatype = MPI_DATATYPE_NULL;
+
+	if (committedDatatype != MPI_DATATYPE_NULL)
+		return committedDatatype;
+
+	MPI_Type_create_struct(3, (int[]){ 1, 1, 1 }, (MPI_Aint[]){
+		offsetof(FixedPoint, x),
+		offsetof(FixedPoint, y),
+		offsetof(FixedPoint, color),
+	}, (MPI_Datatype[]){ MPI_INT, MPI_INT, COLOR_TYPE, }, &committedDatatype);
+
+	MPI_Type_commit(&committedDatatype);
+
+	return committedDatatype;
 }

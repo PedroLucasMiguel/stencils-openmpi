@@ -19,6 +19,9 @@ typedef struct
 	Color color;
 } FixedPoint;
 
+MPI_Datatype getFixedPointDatatype();
+#define FIXED_POINT_TYPE getFixedPointDatatype()
+
 typedef struct
 {
 	int size;

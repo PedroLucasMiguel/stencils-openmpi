@@ -114,66 +114,80 @@ void fillWithGray(const int size, Color arr[size])
 		arr[i] = GRAY;
 }
 
+ImageData getImageData(const int myRank, MPI_Comm comm)
+{
+	ImageData imageData = { 0, 0, NULL };
+
+	IF_COORDINATOR(myRank, {
+		imageData = readImageFile("resources/small_test.dat");
+		printImageData(stdout, imageData);
+	});
+
+	MPI_Bcast(&imageData.size, 1, MPI_INT, RANK_COORDINATOR, comm);
+	MPI_Bcast(&imageData.fixedPointCount, 1, MPI_INT, RANK_COORDINATOR, comm);
+
+	imageData.fixedPoints = realloc(imageData.fixedPoints, imageData.fixedPointCount * sizeof(FixedPoint));
+	MPI_Bcast(imageData.fixedPoints, imageData.fixedPointCount, FIXED_POINT_TYPE, RANK_COORDINATOR, comm);
+
+	return imageData;
+}
+
 void start_procedure(MPI_Comm comm, const int numProcesses)
 {
 	const int myRank = getProcessRank(comm);
 
-	const ImageData data = readImageFile("resources/small_test.dat");
+	const ImageData imageData = getImageData(myRank, comm);
 
-	IF_COORDINATOR(myRank, {
-		printImageData(stdout, data);
-	});
+	const int lineCount = imageData.size / numProcesses;
+	const int start = lineCount * myRank; // Inclusive
+	const int end = lineCount * (myRank + 1); // Exclusive
 
-	const int mySize = data.size / numProcesses;
-	const int start = mySize * myRank;
-	const int end = mySize * (myRank + 1);
+	debug_print(myRank, "Tasked with rows [%d, %d)\n", start, end);
 
-	debug_print(myRank, "Tasked with rows %d - %d\n", start, end);
+	Color image[lineCount][imageData.size];
 
-	Color image[mySize][data.size];
-
-	for (int i = 0; i < mySize; ++i)
-		for (int j = 0; j < data.size; ++j)
+	for (int i = 0; i < lineCount; ++i)
+		for (int j = 0; j < imageData.size; ++j)
 			image[i][j] = (Color){ 0, 0, 0 };
 
-	updateFixedPoints(data, image, start, end);
+	updateFixedPoints(imageData, image, start, end);
 
 	debug_print(myRank, "My image:\n");
-	printImage(mySize, data.size, image);
+	printImage(lineCount, imageData.size, image);
 
-	Color fromTop[data.size];
-	fillWithGray(data.size, fromTop);
+	Color fromTop[imageData.size];
+	fillWithGray(imageData.size, fromTop);
 
-	Color fromBottom[data.size];
-	fillWithGray(data.size, fromBottom);
+	Color fromBottom[imageData.size];
+	fillWithGray(imageData.size, fromBottom);
 
 	const Neighbors myNeighbors = getNeighbors(comm);
 	debug_print(myRank, "up: %d | down: %d\n", myNeighbors.up, myNeighbors.down);
 
 	// Send down, receive up
 	MPI_Sendrecv(
-		&image[mySize - 1][0], data.size, COLOR_TYPE, myNeighbors.down, TAG_ANY,
-		&fromTop[0], data.size, COLOR_TYPE, myNeighbors.up, TAG_ANY, comm, MPI_STATUS_IGNORE
+		&image[lineCount - 1][0], imageData.size, COLOR_TYPE, myNeighbors.down, TAG_ANY,
+		&fromTop[0], imageData.size, COLOR_TYPE, myNeighbors.up, TAG_ANY, comm, MPI_STATUS_IGNORE
 	);
 
 	debug_print(myRank, "receive from [up] %d:", myNeighbors.up);
-	printImageLine(data.size, fromTop);
+	printImageLine(imageData.size, fromTop);
 
 	// Send up, receive down
 	MPI_Sendrecv(
-		&image[0][0], data.size, COLOR_TYPE, myNeighbors.up, TAG_ANY,
-		&fromBottom[0], data.size, COLOR_TYPE, myNeighbors.down, TAG_ANY, comm, MPI_STATUS_IGNORE
+		&image[0][0], imageData.size, COLOR_TYPE, myNeighbors.up, TAG_ANY,
+		&fromBottom[0], imageData.size, COLOR_TYPE, myNeighbors.down, TAG_ANY, comm, MPI_STATUS_IGNORE
 	);
 
 	debug_print(myRank, "receive from [down] %d:", myNeighbors.down);
-	printImageLine(data.size, fromBottom);
+	printImageLine(imageData.size, fromBottom);
 
-//	updateFixedPoints(data, image, start, end);
+//	updateFixedPoints(imageData, image, start, end);
 
 //	debug_print(myRank, "My image:\n");
-//	printImage(mySize, data.size, image);
+//	printImage(lineCount, imageData.size, image);
 
-	free(data.fixedPoints);
+	free(imageData.fixedPoints);
 }
 
 void updateFixedPoints(const ImageData data, Color (* image)[data.size], const int start, const int end)
