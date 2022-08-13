@@ -1,6 +1,6 @@
 PROG := stencils-openmpi
 
-SRCS := $(wildcard src/*.c)
+SRCS := main.c $(wildcard src/*.c)
 INCLUDE = -I.include/
 
 CC := mpicc

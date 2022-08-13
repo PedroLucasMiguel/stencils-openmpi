@@ -1,30 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <stdbool.h>
 #include <string.h>
 #include <mpi.h>
 
-#include "../include/Color.h"
-#include "../include/FileReader.h"
-
-enum MessageTags
-{
-	TAG_SEND_UP = 1,
-	TAG_SEND_DOWN,
-};
-
-__attribute__((format(printf, 2, 3)))
-void debug_print(const int rank, const char* const fmt, ...)
-{
-	va_list args;
-	va_start(args, fmt);
-
-	printf("%d: ", rank);
-	vprintf(fmt, args);
-
-	va_end(args);
-}
+#include "include/Color.h"
+#include "include/Image.h"
+#include "include/Utils.h"
 
 int getNumProcesses(MPI_Comm comm)
 {
@@ -52,17 +34,6 @@ typedef struct
 	int up;
 	int down;
 } NeighborsIds;
-
-#define COORDINATOR_RANK 0
-
-#define IF_COORDINATOR(RANK, CODE) \
-    if ((RANK) == COORDINATOR_RANK) {\
-        do {                  \
-            CODE              \
-        } while (0);          \
-    }0
-
-
 
 #define ITERATION_COUNT 10000
 
@@ -133,7 +104,7 @@ ImageData getImageData(const int myRank, MPI_Comm comm, const char* const filePa
 	ImageData imageData = { 0, 0, NULL };
 
 	IF_COORDINATOR(myRank, {
-		imageData = readImageDataFile(filePath);
+		imageData = readImageData(filePath);
 		printImageData(stdout, imageData);
 	});
 
@@ -201,6 +172,7 @@ void doStencilIteration(const IterationData d)
 				[0] = d.image[i * d.w + j],
 			};
 
+			// Skip self (0, 0) since we know it is going to be inbounds
 			for (int p = 1; p < ARR_LEN(stencilOffsets); ++p)
 			{
 				stencilPixels[p] = getPixelAt(
@@ -274,6 +246,13 @@ void start_procedure(MPI_Comm comm, const int numProcesses, const char* const in
 
 	for (int i = 0; i < ITERATION_COUNT; ++i)
 	{
+		IF_COORDINATOR(myRank, {
+			if (i % 1000 == 0)
+			{
+				debug_print(myRank, "Starting iteration #%d\n", i + 1);
+			}
+		});
+
 		// Send to neighbor up, receive from neighbor down
 		MPI_Sendrecv(
 			&myImage[0][0], imageData.size, COLOR_TYPE, neighborsIds.up, TAG_SEND_UP,
@@ -308,7 +287,7 @@ void start_procedure(MPI_Comm comm, const int numProcesses, const char* const in
 	);
 
 	IF_COORDINATOR(myRank, {
-		debug_print(myRank, "Output at %s\n", outFilePath);
+		debug_print(myRank, "Result image output to %s\n", outFilePath);
 		FILE* const f = fopen(outFilePath, "w");
 		printImage(f, imageData.size, imageData.size, finalImage);
 		fclose(f);

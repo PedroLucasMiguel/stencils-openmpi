@@ -12,7 +12,7 @@ typedef struct
 	FixedPoint* fixedPoints;
 } ImageData;
 
-ImageData readImageDataFile(const char* path);
+ImageData readImageData(const char* path);
 void printImageData(FILE* out, ImageData data);
 
 #endif
