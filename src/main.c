@@ -63,7 +63,6 @@ typedef struct
     }0
 
 #define GRAY (Color){ 127, 127, 127, }
-
 #define WHITE (Color){ 0, 0, 0, }
 
 #define ITERATION_COUNT 10000
@@ -172,6 +171,8 @@ Color averageColorOf(const Color colors[const 5])
 	return result;
 }
 
+#define ARR_LEN(A) (sizeof (A) / sizeof *(A))
+
 void doStencilIteration(
 	const int height, const int width,
 	Color image[const height][width],
@@ -187,9 +188,9 @@ void doStencilIteration(
 	{
 		for (int j = 0; j < width; ++j)
 		{
-			Color stencilPixels[5] = {};
+			Color stencilPixels[ARR_LEN(stencilOffsets)] = {};
 
-			for (int p = 0; p < 5; ++p)
+			for (int p = 0; p < ARR_LEN(stencilOffsets); ++p)
 			{
 				stencilPixels[p] = getPixelAt(
 					i + stencilOffsets[p][0],
@@ -202,7 +203,7 @@ void doStencilIteration(
 		}
 	}
 
-	memcpy(image, newImage, height * width * sizeof(Color));
+	memcpy(image, newImage, sizeof newImage);
 }
 
 void start_procedure(MPI_Comm comm, const int numProcesses)
