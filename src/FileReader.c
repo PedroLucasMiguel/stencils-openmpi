@@ -3,36 +3,20 @@
 
 #include "../include/FileReader.h"
 
-MPI_Datatype addFixedPointToMpi()
-{
-// TODO: Use XMacros to avoid errors
-	MPI_Aint offsets[] = {
-		offsetof(FixedPoint, x),
-		offsetof(FixedPoint, y),
-		offsetof(FixedPoint, r),
-		offsetof(FixedPoint, g),
-		offsetof(FixedPoint, b),
-	};
-
-	MPI_Datatype mpi_FixedPoint;
-
-	MPI_Type_create_struct(5,
-		(int[]){ [0 ... 4]=1 },
-		offsets,
-		(MPI_Datatype[]){ [0 ... 4]=MPI_INT },
-		&mpi_FixedPoint
-	);
-
-	MPI_Type_commit(&mpi_FixedPoint);
-
-	return mpi_FixedPoint;
-}
-
 static int readIntFromFile(FILE* const f)
 {
 	int i;
 	fscanf(f, "%d", &i);
 	return i;
+}
+
+static Color readColorFromFile(FILE* const f)
+{
+	return (Color){
+		.r = readIntFromFile(f),
+		.g = readIntFromFile(f),
+		.b = readIntFromFile(f),
+	};
 }
 
 static FixedPoint* readFixedPointsFromFile(FILE* const f, int const count)
@@ -44,9 +28,7 @@ static FixedPoint* readFixedPointsFromFile(FILE* const f, int const count)
 		fixedPoints[i] = (FixedPoint){
 			.x = readIntFromFile(f),
 			.y = readIntFromFile(f),
-			.r = readIntFromFile(f),
-			.g = readIntFromFile(f),
-			.b = readIntFromFile(f),
+			.color = readColorFromFile(f),
 		};
 	}
 
@@ -59,8 +41,8 @@ ImageData readImageFile(const char* const path)
 
 	if (f == NULL)
 	{
-		perror("Unable to open file.");
-		exit(1);
+		perror("Unable to open file");
+		exit(EXIT_FAILURE);
 	}
 
 	const int size = readIntFromFile(f);
@@ -77,18 +59,41 @@ ImageData readImageFile(const char* const path)
 	return imageData;
 }
 
-void printFixedPoint(const FixedPoint* const fp)
+void printColor(FILE* const out, const Color c)
 {
-	printf("X: %d || Y: %d || R: %d || G: %d || B: %d\n",
-		fp->x, fp->y,
-		fp->r, fp->g, fp->b
-	);
+	fprintf(out, "< %d, %d, %d >", c.r, c.g, c.b);
 }
 
-void printImageData(const ImageData* const data)
+void printFixedPoint(FILE* const out, const FixedPoint fp)
 {
-	printf("Image size: %d | Qtd.Fixed Points: %d\n", data->size, data->fixedPointCount);
+	fprintf(out, "(%d, %d): ", fp.x, fp.y);
+	printColor(out, fp.color);
+	fprintf(out, "\n");
+}
 
-	for (int i = 0; i < data->fixedPointCount; i++)
-		printFixedPoint(&data->fixedPoints[i]);
+void printImageData(FILE* const out, const ImageData data)
+{
+	printf("%d x %d Image; %d Fixed Points:\n",
+		data.size, data.size, data.fixedPointCount);
+
+	for (int i = 0; i < data.fixedPointCount; i++)
+		printFixedPoint(out, data.fixedPoints[i]);
+}
+
+MPI_Datatype getColorDatatype()
+{
+	static MPI_Datatype compiledDatatype = MPI_DATATYPE_NULL;
+
+	if (compiledDatatype != MPI_DATATYPE_NULL)
+		return compiledDatatype;
+
+	MPI_Type_create_struct(3, (int[]){ 1, 1, 1 }, (MPI_Aint []){
+		offsetof(Color, r),
+		offsetof(Color, g),
+		offsetof(Color, b),
+	}, (MPI_Datatype[]){ MPI_INT, MPI_INT, MPI_INT, }, &compiledDatatype);
+
+	MPI_Type_commit(&compiledDatatype);
+
+	return compiledDatatype;
 }

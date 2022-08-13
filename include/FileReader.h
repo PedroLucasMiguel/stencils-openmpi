@@ -4,23 +4,31 @@
 
 typedef struct
 {
-	int x;
-	int y;
 	int r;
 	int g;
 	int b;
+} Color;
+
+MPI_Datatype getColorDatatype();
+#define COLOR_TYPE getColorDatatype()
+
+typedef struct
+{
+	int x;
+	int y;
+	Color color;
 } FixedPoint;
 
 typedef struct
 {
-	const int size;
-	const int fixedPointCount;
-	const FixedPoint* fixedPoints;
+	int size;
+	int fixedPointCount;
+	FixedPoint* fixedPoints;
 } ImageData;
 
 ImageData readImageFile(const char* path);
-void printImageData(const ImageData* data);
-MPI_Datatype addFixedPointToMpi();
-void printFixedPoint(const FixedPoint* fp);
+void printImageData(FILE* out, ImageData data);
+void printFixedPoint(FILE* out, FixedPoint fp);
+void printColor(FILE* out, Color c);
 
 #endif
