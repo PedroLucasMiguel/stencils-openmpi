@@ -4,10 +4,11 @@ SRCS := main.c $(wildcard src/*.c)
 INCLUDE = -I.include/
 
 CC := mpicc
-CFLAGS := -Wall -Wextra -Werror -std=c99 -pedantic
+CFLAGS := -Wall -Wextra -Werror -std=c99 -pedantic -O3
 
 EXEC := mpirun
-EXECFLAGS := -np 4
+MPI_FLAGS := -np 32 --oversubscribe --use-hwthread-cpus
+PROG_FLAGS := resources/img01.dat output.txt
 
 default: all
 
@@ -17,4 +18,4 @@ $(PROG): $(SRCS)
 	$(CC) -o $@ $(SRCS) $(INCLUDE)
 
 run:
-	$(EXEC) $(EXECFLAGS) $(PROG)
+	$(EXEC) $(MPI_FLAGS) $(PROG) $(PROG_FLAGS)

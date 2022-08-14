@@ -15,7 +15,22 @@ int main(int argc, char** argv)
 	const int numProcesses = getNumProcesses(MPI_COMM_WORLD);
 	MPI_Comm newComm = arrangeProcesses(numProcesses);
 
-	runProcedure(newComm, numProcesses, "resources/img01.dat", "output.txt");
+	const char* inFile = "";
+	const char* outFile = "";
+
+	const int myRank = getProcessRank(newComm);
+
+	IF_COORDINATOR(myRank, {
+		if ((argc--) < 2) {
+			fprintf(stderr, "Usage: %s inputFile outputFile\n", argv[0]);
+			exit(EXIT_FAILURE);
+		}
+
+		inFile = argv[1];
+		outFile = argv[2];
+	});
+
+	runProcedure(newComm, numProcesses, inFile, outFile);
 
 	MPI_Finalize();
 
@@ -95,6 +110,13 @@ void runProcedure(MPI_Comm comm, int numProcesses, const char* inFilePath, const
 	IF_COORDINATOR(myRank, {
 		debug_print(myRank, "Result image output to %s\n", outFilePath);
 		FILE* const f = fopen(outFilePath, "w");
+
+		if (f == NULL)
+		{
+			perror("Unable to open file");
+			exit(EXIT_FAILURE);
+		}
+
 		printImage(f, imageData.size, imageData.size, finalImage);
 		fclose(f);
 	});
