@@ -3,6 +3,7 @@
 
 #include "../include/Image.h"
 
+/* Iterates over the fixed points in 'data' and set the appropriate pixels in the image */
 void setFixedPointsOnImageSlice(const ImageData data, Color (* image)[data.size])
 {
 	for (int i = 0; i < data.fixedPointCount; ++i)
@@ -12,6 +13,7 @@ void setFixedPointsOnImageSlice(const ImageData data, Color (* image)[data.size]
 	}
 }
 
+/* Reads the image data contained in the file pointed by 'path' and collects it into the appropriate structure. */
 ImageData readImageData(const char* const path)
 {
 	FILE* const f = fopen(path, "r");
@@ -41,7 +43,7 @@ void printImageData(FILE* const out, const ImageData data)
 		printFixedPoint(out, data.fixedPoints[i]);
 }
 
-static void printImageLine(FILE* const out, const int len, const Color image[len])
+static void printImageLine(FILE* const out, const int len, const Color image[const len])
 {
 	for (int i = 0; i < len; ++i)
 	{
@@ -51,20 +53,18 @@ static void printImageLine(FILE* const out, const int len, const Color image[len
 	putc('\n', out);
 }
 
-void printImage(FILE* const out, const int height, const int width, const Color image[height][width])
+void printImage(FILE* const out, const int height, const int width, const Color image[const height][width])
 {
-
 	for (int i = 0; i < height; ++i)
 	{
 		printImageLine(out, width, image[i]);
 	}
 }
 
-/*
- * Filters from imageData fixedPoints that are not in [start, end), also subtracting
- * 'start' from the 'x' coordinate of each point.
+/* Removes from imageData fixedPoints which x coordinate is not in the interval [ start, end ).
+ * Also subtracts 'start' from the 'x' coordinate of each point.
  */
-void filterFixedPoints(ImageData* const imageData, const int start, const int end)
+void transformFixedPoints(ImageData* imageData, int start, int end)
 {
 	FixedPoint* filtered = malloc(imageData->fixedPointCount * sizeof *filtered);
 	int filteredCount = 0;

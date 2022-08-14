@@ -5,6 +5,11 @@
 
 #define ARR_LEN(A) (sizeof (A) / sizeof *(A))
 
+/* Gets the value of the pixel on coordinate (i, j).
+ * If the pixel is considered 'out of bounds', it either:
+ * - grabs a value from a vector in 'd.adj' (for i-values OOB)
+ * - returns gray (for j-values OOB)
+ */
 Color getPixelAt(int i, int j, const IterationData d)
 {
 	// Check if pixel is from a neighbor
@@ -36,8 +41,12 @@ Color averageColorOf(const Color colors[const 5])
 	return result;
 }
 
+/* Updates the pixels in the image contained in d.image with the average values of neighboring pixels.
+ */
 void doStencilIteration(const IterationData d)
 {
+	// This represents the 'offsets' of all pixels to be considered by the stencil.
+	// Currently, the vertically and horizontally adjacent pixels are used in the computation.
 	const static int stencilOffsets[][2] = {
 		{ 0, 0, }, { -1, 0, }, { +1, 0, }, { 0, -1, }, { 0, +1, },
 	};
@@ -49,10 +58,9 @@ void doStencilIteration(const IterationData d)
 		for (int j = 0; j < d.w; ++j)
 		{
 			Color stencilPixels[ARR_LEN(stencilOffsets)] = {
-				[0] = d.image[i * d.w + j],
+				[0] = d.image[i * d.w + j], // Precompute offset (0, 0) since we know it is going to be inbounds
 			};
 
-			// Skip offset (0, 0) since we know it is going to be inbounds
 			for (int p = 1; p < ARR_LEN(stencilOffsets); ++p)
 			{
 				stencilPixels[p] = getPixelAt(

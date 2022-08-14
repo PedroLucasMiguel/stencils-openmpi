@@ -12,6 +12,7 @@ void printColor(FILE* out, const Color c)
 	fprintf(out, "< %d, %d, %d >", c.channels[R], c.channels[G], c.channels[B]);
 }
 
+/* Create and commit a 'Color' datatype se we can send them between processes easily */
 MPI_Datatype getColorDatatype()
 {
 	static MPI_Datatype committedDatatype = MPI_DATATYPE_NULL;

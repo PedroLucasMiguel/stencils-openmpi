@@ -10,6 +10,7 @@ void printFixedPoint(FILE* const out, const FixedPoint fp)
 	fprintf(out, "\n");
 }
 
+/* Reads the fixed point list from the file 'f' and returns a dynamically-allocated array containing the data read. */
 FixedPoint* readFixedPointsFromFile(FILE* const f, int const count)
 {
 	FixedPoint* const fixedPoints = malloc(count * sizeof *fixedPoints);
@@ -23,6 +24,7 @@ FixedPoint* readFixedPointsFromFile(FILE* const f, int const count)
 	return fixedPoints;
 }
 
+/* Create and commit a 'FixedPoint' datatype se we can send them between processes easily */
 MPI_Datatype getFixedPointDatatype()
 {
 	static MPI_Datatype committedDatatype = MPI_DATATYPE_NULL;

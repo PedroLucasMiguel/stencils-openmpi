@@ -19,6 +19,7 @@ int getProcessRank(MPI_Comm comm)
 	return myRank;
 }
 
+/* This function arranges the processes in a straight, non-periodic line. */
 MPI_Comm arrangeProcesses(int numProcesses)
 {
 	MPI_Comm newComm;
@@ -26,6 +27,10 @@ MPI_Comm arrangeProcesses(int numProcesses)
 	return newComm;
 }
 
+/* This function fetches the process ids of the adjacent processes from this one.
+ * If the process in on a boundary, MPI_PROC_NULL is returned by MPI_Cart_shift on the respective field.
+ * Sending or receiving to/from MPI_PROC_NULL behaves as expected, it does nothing.
+ */
 NeighborsIds getNeighborsIds(MPI_Comm comm)
 {
 #define LINEAR 0
@@ -36,6 +41,11 @@ NeighborsIds getNeighborsIds(MPI_Comm comm)
 	return (NeighborsIds){ up, down };
 }
 
+/* This function is responsible for getting the image data (size, fixed points) from the file in 'filePath' and
+ * distributing this information among all processes through a broadcast.
+ * It is important to note that the structure imageData cannot be made into a 'mpi struct' since the field
+ * 'fixedPoints' is variably sized. Thus, the fields must be transmitted one by one.
+ */
 ImageData getBroadcastImageData(int myRank, MPI_Comm comm, const char* filePath)
 {
 	ImageData imageData = { 0, 0, NULL };

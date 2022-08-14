@@ -12,13 +12,13 @@ typedef struct
 	FixedPoint* fixedPoints;
 } ImageData;
 
-void setFixedPointsOnImageSlice(const ImageData data, Color (* image)[data.size]);
+void setFixedPointsOnImageSlice(ImageData data, Color (* image)[data.size]);
 
 ImageData readImageData(const char* path);
 void printImageData(FILE* out, ImageData data);
 
 void printImage(FILE* out, int height, int width, const Color image[height][width]);
 
-void filterFixedPoints(ImageData* imageData, int start, int end);
+void transformFixedPoints(ImageData* imageData, int start, int end);
 
 #endif

@@ -5,8 +5,9 @@
 
 int const COORDINATOR_RANK = 0;
 
+/* A utility function to print a message to stdout with an added identification from the corresponding process */
 __attribute__((format(printf, 2, 3)))
-void debug_print(const int rank, const char* const fmt, ...)
+void ranked_print(int rank, const char* fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);

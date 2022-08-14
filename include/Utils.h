@@ -14,11 +14,11 @@ extern int const COORDINATOR_RANK;
 
 enum MessageTags
 {
-	TAG_SEND_UP = 1,
-	TAG_SEND_DOWN,
+	TAG_SEND_TOP = 1,
+	TAG_SEND_BOTTOM,
 };
 
-void debug_print(int rank, const char* fmt, ...);
+void ranked_print(int rank, const char* fmt, ...);
 
 void fillWithGray(int len, Color arr[len]);
 

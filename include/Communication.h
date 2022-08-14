@@ -18,8 +18,8 @@ enum
 
 typedef struct
 {
-	int up;
-	int down;
+	int top;
+	int bottom;
 } NeighborsIds;
 
 NeighborsIds getNeighborsIds(MPI_Comm comm);

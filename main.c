@@ -13,13 +13,14 @@ int main(int argc, char** argv)
 	MPI_Init(&argc, &argv);
 
 	const int numProcesses = getNumProcesses(MPI_COMM_WORLD);
-	MPI_Comm newComm = arrangeProcesses(numProcesses);
+	const MPI_Comm newComm = arrangeProcesses(numProcesses);
 
 	const char* inFile = "";
 	const char* outFile = "";
 
 	const int myRank = getProcessRank(newComm);
 
+	// Single command-line argument check, just checks if 2 arguments were passed in.
 	IF_COORDINATOR(myRank, {
 		if ((argc--) < 2) {
 			fprintf(stderr, "Usage: %s inputFile outputFile\n", argv[0]);
@@ -37,22 +38,28 @@ int main(int argc, char** argv)
 	return 0;
 }
 
+/* The core function of the program. Coordinator reads file from 'inFilePath', distributes
+ * the image data to the other processes, which all iterate over the image to apply the stencil,
+ * and collects the resulting image, outputting it to 'outFilePath'.
+ */
 void runProcedure(MPI_Comm comm, int numProcesses, const char* inFilePath, const char* outFilePath)
 {
 	const int myRank = getProcessRank(comm);
 
 	ImageData imageData = getBroadcastImageData(myRank, comm, inFilePath);
 
-	double startTime = MPI_Wtime();
+	// Timer starts after file is read, and processes are ready to begin the process
+	const double startTime = MPI_Wtime();
 
 	const int lineCount = imageData.size / numProcesses;
 	const int start = lineCount * myRank; // Inclusive
 	const int end = lineCount * (myRank + 1); // Exclusive
 
-	debug_print(myRank, "Tasked with rows [%d, %d)\n", start, end);
+	ranked_print(myRank, "Tasked with rows [%d, %d)\n", start, end);
 
-	filterFixedPoints(&imageData, start, end);
+	transformFixedPoints(&imageData, start, end);
 
+	// This matrix hosts the section of the image this process is responsible for.
 	Color myImage[lineCount][imageData.size];
 
 	for (int i = 0; i < lineCount; ++i)
@@ -61,6 +68,7 @@ void runProcedure(MPI_Comm comm, int numProcesses, const char* inFilePath, const
 
 	setFixedPointsOnImageSlice(imageData, myImage);
 
+	// This matrix hosts the lines received from neighboring processes.
 	Color adjLines[2][imageData.size];
 	fillWithGray(imageData.size, adjLines[0]);
 	fillWithGray(imageData.size, adjLines[1]);
@@ -72,33 +80,42 @@ void runProcedure(MPI_Comm comm, int numProcesses, const char* inFilePath, const
 		IF_COORDINATOR(myRank, {
 			if (i % 1000 == 0)
 			{
-				debug_print(myRank, "Starting iteration #%d\n", i);
+				ranked_print(myRank, "Starting iteration #%d\n", i);
 			}
 		});
 
-		// Send to neighbor up, receive from neighbor down
+		// Send to neighbor on top, receive from neighbor on bottom
 		MPI_Sendrecv(
-			&myImage[0][0], imageData.size, COLOR_TYPE, neighborsIds.up, TAG_SEND_UP,
-			&adjLines[BOTTOM], imageData.size, COLOR_TYPE, neighborsIds.down, TAG_SEND_UP, comm, MPI_STATUS_IGNORE
+			&myImage[0][0], imageData.size, COLOR_TYPE, neighborsIds.top, TAG_SEND_TOP,
+			&adjLines[BOTTOM], imageData.size, COLOR_TYPE, neighborsIds.bottom, TAG_SEND_TOP, comm, MPI_STATUS_IGNORE
 		);
 
 		// And vice-versa...
 		MPI_Sendrecv(
-			&myImage[lineCount - 1][0], imageData.size, COLOR_TYPE, neighborsIds.down, TAG_SEND_DOWN,
-			&adjLines[TOP], imageData.size, COLOR_TYPE, neighborsIds.up, TAG_SEND_DOWN, comm, MPI_STATUS_IGNORE
+			&myImage[lineCount - 1][0], imageData.size, COLOR_TYPE, neighborsIds.bottom, TAG_SEND_BOTTOM,
+			&adjLines[TOP], imageData.size, COLOR_TYPE, neighborsIds.top, TAG_SEND_BOTTOM, comm, MPI_STATUS_IGNORE
 		);
 
+		/* NOTE: Processes on the 'boundary' or the vector created by MPI will communicate with MPI_PROC_NULL.
+		 * This behaves as expected, with buffers left unmodified. Thus, processes without neighbors will have an array
+		 * from adjLines still filled with gray, mimic-ing the imaginary gray border around the image.
+		 */
+
+		// Apply the stencil over our slice of the image
 		doStencilIteration((IterationData){
 			lineCount, imageData.size,
 			(Color*)myImage,
 			{ adjLines[0], adjLines[1] }
 		});
 
+		// After every iteration, update the fixed points on the image
 		setFixedPointsOnImageSlice(imageData, myImage);
 	}
 
-	double endTime = MPI_Wtime();
+	// Timer ends after final stencil iteration is applied.
+	const double endTime = MPI_Wtime();
 
+	// Resulting image. Subordinated processes will not use this variable, so memory will not be allocated for them.
 	Color(* finalImage)[imageData.size] = NULL;
 
 	IF_COORDINATOR(myRank, {
@@ -112,8 +129,8 @@ void runProcedure(MPI_Comm comm, int numProcesses, const char* inFilePath, const
 	);
 
 	IF_COORDINATOR(myRank, {
-		debug_print(myRank, "Process took %f seconds.\n", endTime - startTime);
-		debug_print(myRank, "Result image output to %s\n", outFilePath);
+		ranked_print(myRank, "Process took %f seconds.\n", endTime - startTime);
+		ranked_print(myRank, "Result image output to %s\n", outFilePath);
 		FILE* const f = fopen(outFilePath, "w");
 
 		if (f == NULL)
@@ -127,6 +144,7 @@ void runProcedure(MPI_Comm comm, int numProcesses, const char* inFilePath, const
 	});
 
 	free(imageData.fixedPoints);
+	// free(NULL) is guaranteed to do nothing, so no UB on subordinated processes.
 	free(finalImage);
 }
 
