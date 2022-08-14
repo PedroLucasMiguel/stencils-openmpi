@@ -8,8 +8,8 @@
 
 typedef struct
 {
-	int x;
-	int y;
+	int i;
+	int j;
 	Color color;
 } FixedPoint;
 

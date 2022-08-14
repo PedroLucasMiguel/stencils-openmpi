@@ -5,7 +5,7 @@
 
 void printFixedPoint(FILE* const out, const FixedPoint fp)
 {
-	fprintf(out, "(%d, %d): ", fp.x, fp.y);
+	fprintf(out, "(%d, %d): ", fp.i, fp.j);
 	printColor(out, fp.color);
 	fprintf(out, "\n");
 }
@@ -17,7 +17,7 @@ FixedPoint* readFixedPointsFromFile(FILE* const f, int const count)
 
 	for (int i = 0; i < count; ++i)
 	{
-		fscanf(f, "%d %d", &fixedPoints[i].x, &fixedPoints[i].y);
+		fscanf(f, "%d %d", &fixedPoints[i].i, &fixedPoints[i].j);
 		fixedPoints[i].color = readColorFromFile(f);
 	}
 
@@ -33,8 +33,8 @@ MPI_Datatype getFixedPointDatatype()
 		return committedDatatype;
 
 	MPI_Type_create_struct(3, (int[]){ 1, 1, 1 }, (MPI_Aint[]){
-		offsetof(FixedPoint, x),
-		offsetof(FixedPoint, y),
+		offsetof(FixedPoint, i),
+		offsetof(FixedPoint, j),
 		offsetof(FixedPoint, color),
 	}, (MPI_Datatype[]){ MPI_INT, MPI_INT, COLOR_TYPE, }, &committedDatatype);
 

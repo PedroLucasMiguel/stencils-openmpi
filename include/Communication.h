@@ -10,12 +10,14 @@ int getProcessRank(MPI_Comm comm);
 
 MPI_Comm arrangeProcesses(int numProcesses);
 
+// This enum aids code readability when accessing struct fields indexed by what 'kind' of neighbor is being dealt with.
 enum
 {
 	TOP = 0,
 	BOTTOM = 1,
 };
 
+// This struct hosts a processes' neighbors' IDs
 typedef struct
 {
 	int top;

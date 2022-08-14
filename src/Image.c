@@ -9,7 +9,7 @@ void setFixedPointsOnImageSlice(const ImageData data, Color (* image)[data.size]
 	for (int i = 0; i < data.fixedPointCount; ++i)
 	{
 		const FixedPoint fp = data.fixedPoints[i];
-		image[fp.x][fp.y] = fp.color;
+		image[fp.i][fp.j] = fp.color;
 	}
 }
 
@@ -36,7 +36,7 @@ ImageData readImageData(const char* const path)
 
 void printImageData(FILE* const out, const ImageData data)
 {
-	printf("%d x %d Image; %d Fixed Points:\n",
+	printf("%d i %d Image; %d Fixed Points:\n",
 		data.size, data.size, data.fixedPointCount);
 
 	for (int i = 0; i < data.fixedPointCount; i++)
@@ -61,8 +61,8 @@ void printImage(FILE* const out, const int height, const int width, const Color 
 	}
 }
 
-/* Removes from imageData fixedPoints which x coordinate is not in the interval [ start, end ).
- * Also subtracts 'start' from the 'x' coordinate of each point.
+/* Removes from imageData fixedPoints which i coordinate is not in the interval [ start, end ).
+ * Also subtracts 'start' from the 'i' coordinate of each point.
  */
 void transformFixedPoints(ImageData* imageData, int start, int end)
 {
@@ -73,11 +73,11 @@ void transformFixedPoints(ImageData* imageData, int start, int end)
 	{
 		const FixedPoint fp = imageData->fixedPoints[i];
 
-		if (fp.x < start || fp.x >= end)
+		if (fp.i < start || fp.i >= end)
 			continue;
 
 		filtered[filteredCount] = (FixedPoint){
-			.x = fp.x - start, .y = fp.y,
+			.i = fp.i - start, .j = fp.j,
 			.color = fp.color,
 		};
 

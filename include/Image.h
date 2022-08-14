@@ -5,6 +5,7 @@
 
 #include "FixedPoint.h"
 
+// This structs hosts all data necessary to 'describe' an image in its initial state: its size and fixed points.
 typedef struct
 {
 	int size;
