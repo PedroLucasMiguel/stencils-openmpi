@@ -7,7 +7,7 @@ CC := mpicc
 CFLAGS := -Wall -Wextra -Werror -std=c99 -pedantic -O3
 
 EXEC := mpirun
-MPI_FLAGS := -np 32 --oversubscribe --use-hwthread-cpus
+MPI_FLAGS := -np 4 --oversubscribe --use-hwthread-cpus
 PROG_FLAGS := resources/img01.dat output.txt
 
 default: all

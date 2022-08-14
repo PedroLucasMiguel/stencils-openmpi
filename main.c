@@ -43,6 +43,8 @@ void runProcedure(MPI_Comm comm, int numProcesses, const char* inFilePath, const
 
 	ImageData imageData = getBroadcastImageData(myRank, comm, inFilePath);
 
+	double startTime = MPI_Wtime();
+
 	const int lineCount = imageData.size / numProcesses;
 	const int start = lineCount * myRank; // Inclusive
 	const int end = lineCount * (myRank + 1); // Exclusive
@@ -95,6 +97,8 @@ void runProcedure(MPI_Comm comm, int numProcesses, const char* inFilePath, const
 		setFixedPointsOnImageSlice(imageData, myImage);
 	}
 
+	double endTime = MPI_Wtime();
+
 	Color(* finalImage)[imageData.size] = NULL;
 
 	IF_COORDINATOR(myRank, {
@@ -108,6 +112,7 @@ void runProcedure(MPI_Comm comm, int numProcesses, const char* inFilePath, const
 	);
 
 	IF_COORDINATOR(myRank, {
+		debug_print(myRank, "Process took %f seconds.\n", endTime - startTime);
 		debug_print(myRank, "Result image output to %s\n", outFilePath);
 		FILE* const f = fopen(outFilePath, "w");
 
