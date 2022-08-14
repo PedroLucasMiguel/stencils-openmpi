@@ -7,12 +7,15 @@ CC := mpicc
 CFLAGS := -Wall -Wextra -Werror -std=c99 -pedantic -O3
 
 EXEC := mpirun
-MPI_FLAGS := -np 4 --oversubscribe --use-hwthread-cpus
-PROG_FLAGS := resources/img01.dat output.txt
+NP := 4
+MPI_FLAGS := -np $(NP) --oversubscribe --use-hwthread-cpus
+IN_FILE := img01.dat
+OUT_FILE := output.txt
+PROG_FLAGS := $(IN_FILE) $(OUT_FILE)
 
 default: all
 
-all: $(PROG) run
+all: $(PROG)
 
 $(PROG): $(SRCS)
 	$(CC) -o $@ $(SRCS) $(INCLUDE)
